@@ -6,55 +6,41 @@ using UnityEngine;
 
 public class Core : MonoBehaviour
 {
-  public readonly List<CoreComponent> CoreComponents = new List<CoreComponent>();
+    public readonly List<CoreComponent> CoreComponents = new List<CoreComponent>();
 
-  private void Awake()
-  {
-    var comps = GetComponentsInChildren<CoreComponent>();
-
-    foreach (var component in comps)
+    public void LogicUpdate()
     {
-      AddComponent(component);
+        foreach (CoreComponent component in CoreComponents)
+        {
+            component.LogicUpdate();
+        }
     }
 
-    foreach (var component in CoreComponents){
-      component.Init(this);
-    }
-  }
-
-  public void LogicUpdate()
-  {
-    foreach (CoreComponent component in CoreComponents)
+    public T GetCoreComponent<T>() where T:CoreComponent
     {
-      component.LogicUpdate();
+        var comp = CoreComponents
+            .OfType<T>()
+            .FirstOrDefault();
+
+        if (comp == null)
+        {
+            Debug.LogWarning($"{typeof(T)} not found on {transform.parent.name}");
+        }
+
+        return comp;
     }
-  }
 
-  public T GetCoreComponent<T>() where T : CoreComponent
-  {
-    var comp = CoreComponents
-        .OfType<T>()
-        .FirstOrDefault();
-
-    if (comp == null)
+    public T GetCoreComponent<T>(ref T value) where T:CoreComponent
     {
-      Debug.LogWarning($"{typeof(T)} not found on {transform.parent.name}");
+        value = GetCoreComponent<T>();
+        return value;
     }
 
-    return comp;
-  }
-
-  public T GetCoreComponent<T>(ref T value) where T : CoreComponent
-  {
-    value = GetCoreComponent<T>();
-    return value;
-  }
-
-  public void AddComponent(CoreComponent component)
-  {
-    if (!CoreComponents.Contains(component))
-    {
-      CoreComponents.Add(component);
+    public void AddComponent(CoreComponent component)
+    { 
+        if (!CoreComponents.Contains(component))
+        {
+            CoreComponents.Add(component);
+        }
     }
-  }
 }
