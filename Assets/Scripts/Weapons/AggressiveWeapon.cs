@@ -3,72 +3,82 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public class AggressiveWeapon : Weapon {
+public class AggressiveWeapon : Weapon
+{
+    protected SO_AggressiveWeaponData aggressiveWeaponData;
 
-	private Movement Movement { get => movement ?? core.GetCoreComponent(ref movement); }
+    private List<IDamageable> detectedDamageables = new List<IDamageable>();
+    private List<IKnockbackable> detectedKnockbackables = new List<IKnockbackable>();
 
-	private Movement movement;
+    protected override void Awake()
+    {
+        base.Awake();
 
-	protected SO_AggressiveWeaponData aggressiveWeaponData;
+        if(weaponData.GetType() == typeof(SO_AggressiveWeaponData))
+        {
+            aggressiveWeaponData = (SO_AggressiveWeaponData)weaponData;
+        }
+        else
+        {
+            Debug.LogError("Wrong data for the weapon");
+        }
+    }
 
-	private List<IDamageable> detectedDamageables = new List<IDamageable>();
-	private List<IKnockbackable> detectedKnockbackables = new List<IKnockbackable>();
+    public override void AnimationActionTrigger()
+    {
+        base.AnimationActionTrigger();
 
-	protected override void Awake() {
-		base.Awake();
+        CheckMeleeAttack();
+    }
 
-		if (weaponData.GetType() == typeof(SO_AggressiveWeaponData)) {
-			aggressiveWeaponData = (SO_AggressiveWeaponData)weaponData;
-		} else {
-			Debug.LogError("Wrong data for the weapon");
-		}
-	}
+    private void CheckMeleeAttack()
+    {
+        WeaponAttackDetails details = aggressiveWeaponData.AttackDetails[attackCounter];
 
-	public override void AnimationActionTrigger() {
-		base.AnimationActionTrigger();
+        foreach (IDamageable item in detectedDamageables.ToList())
+        {
+            item.Damage(details.damageAmount);
+        }
 
-		CheckMeleeAttack();
-	}
+        foreach (IKnockbackable item in detectedKnockbackables.ToList())
+        {
+            item.Knockback(details.knockbackAngle, details.knockbackStrength, core.Movement.FacingDirection);
+        }
+    }
 
-	private void CheckMeleeAttack() {
-		WeaponAttackDetails details = aggressiveWeaponData.AttackDetails[attackCounter];
+    public void AddToDetected(Collider2D collision)
+    {
 
-		foreach (IDamageable item in detectedDamageables.ToList()) {
-			item.Damage(details.damageAmount);
-		}
+        IDamageable damageable = collision.GetComponent<IDamageable>();
 
-		foreach (IKnockbackable item in detectedKnockbackables.ToList()) {
-			item.Knockback(details.knockbackAngle, details.knockbackStrength, Movement.FacingDirection);
-		}
-	}
+        if(damageable != null)
+        {
+            detectedDamageables.Add(damageable);
+        }
 
-	public void AddToDetected(Collider2D collision) {
+        IKnockbackable knockbackable = collision.GetComponent<IKnockbackable>();
 
-		IDamageable damageable = collision.GetComponent<IDamageable>();
+        if(knockbackable != null)
+        {
+            detectedKnockbackables.Add(knockbackable);
+        }
+    }
 
-		if (damageable != null) {
-			detectedDamageables.Add(damageable);
-		}
+    public void RemoveFromDetected(Collider2D collision)
+    {
+        IDamageable damageable = collision.GetComponent<IDamageable>();
 
-		IKnockbackable knockbackable = collision.GetComponent<IKnockbackable>();
+        if (damageable != null)
+        {
+            detectedDamageables.Remove(damageable);
+        }
 
-		if (knockbackable != null) {
-			detectedKnockbackables.Add(knockbackable);
-		}
-	}
+        IKnockbackable knockbackable = collision.GetComponent<IKnockbackable>();
 
-	public void RemoveFromDetected(Collider2D collision) {
-		IDamageable damageable = collision.GetComponent<IDamageable>();
-
-		if (damageable != null) {
-			detectedDamageables.Remove(damageable);
-		}
-
-		IKnockbackable knockbackable = collision.GetComponent<IKnockbackable>();
-
-		if (knockbackable != null) {
-			detectedKnockbackables.Remove(knockbackable);
-		}
-	}
-
+        if (knockbackable != null)
+        {
+            detectedKnockbackables.Remove(knockbackable);
+        }
+    }
+   
 }
